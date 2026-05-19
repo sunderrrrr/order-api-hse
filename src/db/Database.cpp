@@ -16,6 +16,12 @@ Database::~Database() {
     }
 }
 
+void Database::clearForTesting() {
+    PGresult* res = PQexec(conn_, "TRUNCATE TABLE orders RESTART IDENTITY");
+    checkResult(res, PGRES_COMMAND_OK);
+    PQclear(res);
+}
+
 void Database::checkResult(PGresult* res, ExecStatusType expected) {
     if (PQresultStatus(res) != expected) {
         std::string err = PQresultErrorMessage(res);
@@ -47,4 +53,26 @@ void Database::initSchema() {
     PGresult* res = PQexec(conn_, sql);
     checkResult(res, PGRES_COMMAND_OK);
     PQclear(res);
+}
+
+Order Database::createOrder(const std::string& title,
+                             const std::string& description) {
+    if (title.empty()) {
+        throw std::invalid_argument("Title cannot be empty");
+    }
+    
+    const char* sql =
+        "INSERT INTO orders (title, description) "
+        "VALUES ($1, $2) "
+        "RETURNING id, title, description, status, "
+        "TO_CHAR(created_at, 'DD-MM-YYYY HH24:MI:SS')";
+
+    const char* params[2] = {title.c_str(), description.c_str()};
+    PGresult* res = PQexecParams(conn_, sql, 2,
+                                 nullptr, params, nullptr, nullptr, 0);
+    checkResult(res, PGRES_TUPLES_OK);
+
+    Order o = rowToOrder(res, 0);
+    PQclear(res);
+    return o;
 }

@@ -1,28 +1,40 @@
+#include "oatpp/network/Server.hpp"
+#include "oatpp/core/base/Environment.hpp"
+
+#include "AppComponent.hpp"
+#include "controller/OrderController.hpp"
+
 #include <iostream>
-#include <cstdlib>
-#include "db/Database.hpp"
 
 int main() {
-    try {
-        auto host = std::string(std::getenv("DB_HOST") ? std::getenv("DB_HOST") : "localhost");
-        auto port = std::string(std::getenv("DB_PORT") ? std::getenv("DB_PORT") : "5432");
-        auto name = std::string(std::getenv("DB_NAME") ? std::getenv("DB_NAME") : "orders");
-        auto user = std::string(std::getenv("DB_USER") ? std::getenv("DB_USER") : "postgres");
-        auto pass = std::string(std::getenv("DB_PASS") ? std::getenv("DB_PASS") : "");
-        if (pass == "") {
-            std::cerr << "DB pass is empty" << std::endl;
-        }
-        std::string conn =
-            "host=" + host + " port=" + port +
-            " dbname=" + name + " user=" + user + " password=" + pass;
+    oatpp::base::Environment::init();
 
-        Database db(conn);
-        db.initSchema();
-        std::cout << "DB connected, schema ready" << std::endl;
+    try {
+        AppComponent components;
+
+        OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
+        OATPP_COMPONENT(std::shared_ptr<Database>, database);
+        OATPP_COMPONENT(
+            std::shared_ptr<oatpp::network::ServerConnectionProvider>, provider);
+        OATPP_COMPONENT(
+            std::shared_ptr<oatpp::web::server::HttpConnectionHandler>, handler);
+
+        database->initSchema();
+        auto controller = OrderController::createShared(database);
+        router->addController(controller);
+        oatpp::network::Server server(provider, handler);
+
+        const char* p = std::getenv("SERVER_PORT");
+        std::cout << "Order API on port " << (p ? p : "8080") << std::endl;
+
+        server.run();
 
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
+        std::cerr << "Fatal: " << e.what() << std::endl;
+        oatpp::base::Environment::destroy();
         return 1;
     }
+
+    oatpp::base::Environment::destroy();
     return 0;
 }

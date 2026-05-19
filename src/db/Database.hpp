@@ -86,7 +86,11 @@ public:
      * @throws std::runtime_error если заказ не найден
      */
     void deleteOrder(int id);
-
+    
+    /**
+     * @brief Очищает БД для тестов
+     */
+    void clearForTesting();
 private:
     PGconn* conn_; ///< Соединение с PostgreSQL
 
@@ -105,4 +109,7 @@ private:
      * @throws std::runtime_error Если статус не совпадает
      */
     void checkResult(PGresult* res, ExecStatusType expectedStatus);
+
+
+   
 };
