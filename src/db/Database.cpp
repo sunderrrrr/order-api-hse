@@ -76,3 +76,21 @@ Order Database::createOrder(const std::string& title,
     PQclear(res);
     return o;
 }
+
+std::vector<Order> Database::getAllOrders() {
+    const char* sql =
+        "SELECT id, title, description, status, "
+        "TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') "
+        "FROM orders ORDER BY id";
+
+    PGresult* res = PQexec(conn_, sql);
+    checkResult(res, PGRES_TUPLES_OK);
+
+    std::vector<Order> orders;
+    int rows = PQntuples(res);
+    for (int i = 0; i < rows; ++i) {
+        orders.push_back(rowToOrder(res, i));
+    }
+    PQclear(res);
+    return orders;
+}

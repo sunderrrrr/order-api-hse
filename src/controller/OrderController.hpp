@@ -83,6 +83,29 @@ public:
         }
     }
 
+    /**
+     * @brief Получить все заказы
+     *
+     * Возвращает JSON-массив всех заказов в поле "orders".
+     */
+    ENDPOINT("GET", "/orders", getOrders) {
+        try {
+            auto orders = db_->getAllOrders();
+
+            auto list = OrderListDto::createShared();
+            list->orders = {};
+            for (const auto& o : orders) {
+                list->orders->push_back(orderToDto(o));
+            }
+            return createDtoResponse(Status::CODE_200, list);
+
+        } catch (const std::exception& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = std::string("Internal error: ") + e.what();
+            return createDtoResponse(Status::CODE_500, msg);
+        }
+    }
+
 private:
     std::shared_ptr<Database> db_; ///< Объект для работы с БД
 
