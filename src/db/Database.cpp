@@ -80,7 +80,7 @@ Order Database::createOrder(const std::string& title,
 std::vector<Order> Database::getAllOrders() {
     const char* sql =
         "SELECT id, title, description, status, "
-        "TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') "
+        "TO_CHAR(created_at, 'DD-MM-YYYY HH24:MI:SS') "
         "FROM orders ORDER BY id";
 
     PGresult* res = PQexec(conn_, sql);
@@ -93,4 +93,26 @@ std::vector<Order> Database::getAllOrders() {
     }
     PQclear(res);
     return orders;
+}
+
+Order Database::getOrderById(int id) {
+    std::string idStr = std::to_string(id);
+    const char* sql =
+        "SELECT id, title, description, status, "
+        "TO_CHAR(created_at, 'DD-MM-YYYY HH24:MI:SS') "
+        "FROM orders WHERE id = $1";
+
+    const char* params[1] = {idStr.c_str()};
+    PGresult* res = PQexecParams(conn_, sql, 1,
+                                 nullptr, params, nullptr, nullptr, 0);
+    checkResult(res, PGRES_TUPLES_OK);
+
+    if (PQntuples(res) == 0) {
+        PQclear(res);
+        throw std::runtime_error("Order not found: " + idStr);
+    }
+
+    Order o = rowToOrder(res, 0);
+    PQclear(res);
+    return o;
 }

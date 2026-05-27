@@ -105,7 +105,28 @@ public:
             return createDtoResponse(Status::CODE_500, msg);
         }
     }
+    /**
+     * @brief Получить заказ по ID
+     *
+     * Возвращает 404 если заказ не существует.
+     */
+    ENDPOINT("GET", "/orders/{id}", getOrderById,
+            PATH(Int32, id))
+    {
+        try {
+            Order o = db_->getOrderById(id);
+            return createDtoResponse(Status::CODE_200, orderToDto(o));
 
+        } catch (const std::runtime_error& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = e.what();
+            return createDtoResponse(Status::CODE_404, msg);
+        } catch (const std::exception& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = std::string("Internal error: ") + e.what();
+            return createDtoResponse(Status::CODE_500, msg);
+        }
+    }
 private:
     std::shared_ptr<Database> db_; ///< Объект для работы с БД
 
