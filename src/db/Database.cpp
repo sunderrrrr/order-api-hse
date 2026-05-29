@@ -116,3 +116,19 @@ Order Database::getOrderById(int id) {
     PQclear(res);
     return o;
 }
+
+void Database::deleteOrder(int id) {
+    std::string idStr = std::to_string(id);
+    const char* sql = "DELETE FROM orders WHERE id = $1 RETURNING id";
+
+    const char* params[1] = {idStr.c_str()};
+    PGresult* res = PQexecParams(conn_, sql, 1,
+                                 nullptr, params, nullptr, nullptr, 0);
+    checkResult(res, PGRES_TUPLES_OK);
+
+    if (PQntuples(res) == 0) {
+        PQclear(res);
+        throw std::runtime_error("Order not found: " + idStr);
+    }
+    PQclear(res);
+}

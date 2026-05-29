@@ -127,6 +127,30 @@ public:
             return createDtoResponse(Status::CODE_500, msg);
         }
     }
+    /**
+     * @brief Удалить заказ по ID
+     *
+     * Возвращает 200 при успехе, 404 если заказ не найден.
+     */
+    ENDPOINT("DELETE", "/orders/{id}", deleteOrder,
+            PATH(Int32, id))
+    {
+        try {
+            db_->deleteOrder(id);
+            auto msg = MessageDto::createShared();
+            msg->message = "Order deleted";
+            return createDtoResponse(Status::CODE_200, msg);
+
+        } catch (const std::runtime_error& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = e.what();
+            return createDtoResponse(Status::CODE_404, msg);
+        } catch (const std::exception& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = std::string("Internal error: ") + e.what();
+            return createDtoResponse(Status::CODE_500, msg);
+        }
+    }
 private:
     std::shared_ptr<Database> db_; ///< Объект для работы с БД
 
