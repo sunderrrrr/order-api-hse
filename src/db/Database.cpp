@@ -132,3 +132,23 @@ void Database::deleteOrder(int id) {
     }
     PQclear(res);
 }
+
+void Database::updateOrderStatus(int id, OrderStatus status) {
+    std::string idStr     = std::to_string(id);
+    std::string statusStr = statusToStr(status);
+
+    const char* sql =
+        "UPDATE orders SET status = $2 "
+        "WHERE id = $1 RETURNING id";
+
+    const char* params[2] = {idStr.c_str(), statusStr.c_str()};
+    PGresult* res = PQexecParams(conn_, sql, 2,
+                                 nullptr, params, nullptr, nullptr, 0);
+    checkResult(res, PGRES_TUPLES_OK);
+
+    if (PQntuples(res) == 0) {
+        PQclear(res);
+        throw std::runtime_error("Order not found: " + idStr);
+    }
+    PQclear(res);
+}

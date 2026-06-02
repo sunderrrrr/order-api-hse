@@ -151,6 +151,41 @@ public:
             return createDtoResponse(Status::CODE_500, msg);
         }
     }
+    /**
+     * @brief Изменить статус заказа
+     *
+     * Тело: {"status": "done"}
+     * Допустимые значения: pending, processing, done, cancelled
+     */
+    ENDPOINT("PATCH", "/orders/{id}/status", updateStatus,
+            PATH(Int32, id),
+            BODY_DTO(Object<OrderDto>, body))
+    {
+        try {
+            if (!body->status || body->status->length() == 0) {
+                throw std::invalid_argument("Field 'status' is required");
+            }
+            OrderStatus s = statusFromStr(body->status->c_str());
+            db_->updateOrderStatus(id, s);
+
+            auto msg = MessageDto::createShared();
+            msg->message = "Status updated";
+            return createDtoResponse(Status::CODE_200, msg);
+
+        } catch (const std::invalid_argument& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = e.what();
+            return createDtoResponse(Status::CODE_400, msg);
+        } catch (const std::runtime_error& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = e.what();
+            return createDtoResponse(Status::CODE_404, msg);
+        } catch (const std::exception& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = std::string("Internal error: ") + e.what();
+            return createDtoResponse(Status::CODE_500, msg);
+        }
+    }
 private:
     std::shared_ptr<Database> db_; ///< Объект для работы с БД
 
