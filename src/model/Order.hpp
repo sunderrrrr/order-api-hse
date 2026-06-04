@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <stdexcept> 
 
 /// @brief Статусы, в которых может находиться заказ
 enum class OrderStatus {
