@@ -84,21 +84,43 @@ public:
     }
 
     /**
-     * @brief Получить все заказы
+     * @brief Получить заказы с опциональной фильтрацией
      *
-     * Возвращает JSON-массив всех заказов в поле "orders".
+     * Query params (взаимоисключающие, приоритет сверху вниз):
+     *   - status  — фильтр по статусу
+     *   - keyword — поиск по тексту
+     *   - date    — фильтр по дате (YYYY-MM-DD)
+     *   Без параметров — возвращает все заказы
      */
-    ENDPOINT("GET", "/orders", getOrders) {
+    ENDPOINT("GET", "/orders", getOrders,
+            QUERY(String, status,  "status",  ""),
+            QUERY(String, keyword, "keyword", ""),
+            QUERY(String, date,    "date",    ""))
+    {
         try {
-            auto orders = db_->getAllOrders();
+            std::vector<Order> orders;
 
-            auto list = OrderListDto::createShared();
+            if (status && status->length() > 0) {
+                orders = db_->getOrdersByStatus(statusFromStr(status->c_str()));
+            } else if (keyword && keyword->length() > 0) {
+                orders = db_->searchOrders(keyword->c_str());
+            } else if (date && date->length() > 0) {
+                orders = db_->getOrdersByDate(date->c_str());
+            } else {
+                orders = db_->getAllOrders();
+            }
+
+            auto list    = OrderListDto::createShared();
             list->orders = {};
             for (const auto& o : orders) {
                 list->orders->push_back(orderToDto(o));
             }
             return createDtoResponse(Status::CODE_200, list);
 
+        } catch (const std::invalid_argument& e) {
+            auto msg = MessageDto::createShared();
+            msg->message = e.what();
+            return createDtoResponse(Status::CODE_400, msg);
         } catch (const std::exception& e) {
             auto msg = MessageDto::createShared();
             msg->message = std::string("Internal error: ") + e.what();
