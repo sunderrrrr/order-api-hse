@@ -5,7 +5,7 @@ static const char* SELECT_FIELDS =
     "SELECT id, title, description, status, "
     "TO_CHAR(created_at, 'DD-MM-YYYY HH24:MI:SS') ";
 
-Database::Database(const std::string& connStr) {
+Database::Database(const std::string& connStr) : conn_(nullptr) {
     conn_ = PQconnectdb(connStr.c_str());
     if (PQstatus(conn_) != CONNECTION_OK) {
         std::string err = PQerrorMessage(conn_);

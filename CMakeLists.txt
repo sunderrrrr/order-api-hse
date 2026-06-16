@@ -15,7 +15,6 @@ list(FILTER SOURCES EXCLUDE REGEX ".*main\\.cpp$")
 add_library(order_lib ${SOURCES})
 target_include_directories(order_lib PUBLIC src)
 
-# ВСЕ ЧЕРЕЗ TARGET
 target_link_libraries(order_lib
     oatpp::oatpp
     libpq::pq

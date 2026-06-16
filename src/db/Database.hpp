@@ -21,27 +21,32 @@ public:
      */
     explicit Database(const std::string& connStr);
 
-    /// @brief Деструктор - закрывает соединение
-    ~Database();
+    /**
+     * @brief Виртуальный деструктор для корректного наследования
+     */
+    virtual ~Database();
 
-    /// @brief Создаёт таблицу orders по миграциям если её нет
-    /// @throws std::runtime_error при ошибке SQL
-    void initSchema();
+    /**
+     * @brief Создаёт таблицу orders по миграциям если её нет
+     * @throws std::runtime_error при ошибке SQL
+     */
+    virtual void initSchema();
 
     /**
      * @brief Добавление нового заказа
      * @param title название
      * @param description описание
      * @return Созданный объект класса Order с заполненным id и created_at
+     * @throws std::invalid_argument Если title пустой
      * @throws std::runtime_error при ошибке вставки
      */
-    Order createOrder(const std::string& title, const std::string& description);
+    virtual Order createOrder(const std::string& title, const std::string& description);
 
     /**
      * @brief Возвращает все заказы
      * @return Вектор всех заказов в БД
      */
-    std::vector<Order> getAllOrders();
+    virtual std::vector<Order> getAllOrders();
 
     /**
      * @brief Возвращает заказ по ID
@@ -49,28 +54,29 @@ public:
      * @return Найденный по ID объект класса Order
      * @throws std::runtime_error Если заказ не найден
      */
-    Order getOrderById(int id);
+    virtual Order getOrderById(int id);
 
     /**
      * @brief Возвращает заказы с заданным статусом
      * @param status статус для фильтрации
      * @return std::vector<Order> Вектор заказов
      */
-    std::vector<Order> getOrdersByStatus(OrderStatus status);
+    virtual std::vector<Order> getOrdersByStatus(OrderStatus status);
 
     /**
      * @brief Ищет заказы по ключевому слову в title или description
      * @param keyword слово для поиска (без учёта регистра)
      * @return std::vector<Order> Вектор подходящих заказов
      */
-    std::vector<Order> searchOrders(const std::string& keyword);
+    virtual std::vector<Order> searchOrders(const std::string& keyword);
 
     /**
      * @brief Возвращает заказы, созданные в указанную дату
      * @param date Дата в формате "ДД-ММ-ГГГГ"
      * @return std::vector<Order> Вектор заказов
+     * @throws std::runtime_error При неверном формате даты
      */
-    std::vector<Order> getOrdersByDate(const std::string& date);
+    virtual std::vector<Order> getOrdersByDate(const std::string& date);
 
     /**
      * @brief Обновляет статус заказа
@@ -78,20 +84,28 @@ public:
      * @param status Новый статус
      * @throws std::runtime_error если заказ не найден
      */
-    void updateOrderStatus(int id, OrderStatus status);
+    virtual void updateOrderStatus(int id, OrderStatus status);
 
     /**
      * @brief Удаляет заказ по ID
      * @param id Идентификатор заказа
      * @throws std::runtime_error если заказ не найден
      */
-    void deleteOrder(int id);
+    virtual void deleteOrder(int id);
     
     /**
      * @brief Очищает БД для тестов
      */
-    void clearForTesting();
-private:
+    virtual void clearForTesting();
+    
+protected:
+    /**
+     * @brief Защищенный конструктор для мок-объектов (не открывает соединение с БД)
+     * 
+     * Используется только для тестирования. Не вызывает PQconnectdb.
+     */
+    Database() : conn_(nullptr) {}
+    
     PGconn* conn_; ///< Соединение с PostgreSQL
 
     /**
@@ -109,7 +123,4 @@ private:
      * @throws std::runtime_error Если статус не совпадает
      */
     void checkResult(PGresult* res, ExecStatusType expectedStatus);
-
-
-   
 };
