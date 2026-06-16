@@ -1,10 +1,9 @@
-#include "oatpp/network/Server.hpp"
-#include "oatpp/core/base/Environment.hpp"
+#include <iostream>
 
 #include "AppComponent.hpp"
 #include "controller/OrderController.hpp"
-
-#include <iostream>
+#include "oatpp/core/base/Environment.hpp"
+#include "oatpp/network/Server.hpp"
 
 int main() {
     oatpp::base::Environment::init();
@@ -14,10 +13,8 @@ int main() {
 
         OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
         OATPP_COMPONENT(std::shared_ptr<Database>, database);
-        OATPP_COMPONENT(
-            std::shared_ptr<oatpp::network::ServerConnectionProvider>, provider);
-        OATPP_COMPONENT(
-            std::shared_ptr<oatpp::web::server::HttpConnectionHandler>, handler);
+        OATPP_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, provider);
+        OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpConnectionHandler>, handler);
 
         database->initSchema();
         auto controller = OrderController::createShared(database);

@@ -1,4 +1,5 @@
 #include "Database.hpp"
+
 #include <stdexcept>
 
 static const char* SELECT_FIELDS =
@@ -36,11 +37,11 @@ void Database::checkResult(PGresult* res, ExecStatusType expected) {
 
 Order Database::rowToOrder(PGresult* res, int row) {
     Order o;
-    o.id          = std::stoi(PQgetvalue(res, row, 0));
-    o.title       = PQgetvalue(res, row, 1);
+    o.id = std::stoi(PQgetvalue(res, row, 0));
+    o.title = PQgetvalue(res, row, 1);
     o.description = PQgetvalue(res, row, 2);
-    o.status      = statusFromStr(PQgetvalue(res, row, 3));
-    o.created_at  = PQgetvalue(res, row, 4);
+    o.status = statusFromStr(PQgetvalue(res, row, 3));
+    o.created_at = PQgetvalue(res, row, 4);
     return o;
 }
 
@@ -59,21 +60,20 @@ void Database::initSchema() {
     PQclear(res);
 }
 
-Order Database::createOrder(const std::string& title,
-                             const std::string& description) {
+Order Database::createOrder(const std::string& title, const std::string& description) {
     if (title.empty()) {
         throw std::invalid_argument("Title cannot be empty");
     }
-    
+
     const char* sql =
         "INSERT INTO orders (title, description) "
         "VALUES ($1, $2) "
         "RETURNING id, title, description, status, "
-        "TO_CHAR(created_at, 'DD-MM-YYYY HH24:MI:SS')";;
+        "TO_CHAR(created_at, 'DD-MM-YYYY HH24:MI:SS')";
+    ;
 
     const char* params[2] = {title.c_str(), description.c_str()};
-    PGresult* res = PQexecParams(conn_, sql, 2,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql, 2, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
     Order o = rowToOrder(res, 0);
     PQclear(res);
@@ -81,8 +81,7 @@ Order Database::createOrder(const std::string& title,
 }
 
 std::vector<Order> Database::getAllOrders() {
-    std::string sql = std::string(SELECT_FIELDS) +
-        "FROM orders ORDER BY id";
+    std::string sql = std::string(SELECT_FIELDS) + "FROM orders ORDER BY id";
 
     PGresult* res = PQexec(conn_, sql.c_str());
     checkResult(res, PGRES_TUPLES_OK);
@@ -98,13 +97,10 @@ std::vector<Order> Database::getAllOrders() {
 
 Order Database::getOrderById(int id) {
     std::string idStr = std::to_string(id);
-    std::string sql = std::string(SELECT_FIELDS) +
-        "FROM orders WHERE id = $1";
-
+    std::string sql = std::string(SELECT_FIELDS) + "FROM orders WHERE id = $1";
 
     const char* params[1] = {idStr.c_str()};
-    PGresult* res = PQexecParams(conn_, sql.c_str(), 1,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql.c_str(), 1, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
     if (PQntuples(res) == 0) {
         PQclear(res);
@@ -120,8 +116,7 @@ void Database::deleteOrder(int id) {
     std::string idStr = std::to_string(id);
     const char* sql = "DELETE FROM orders WHERE id = $1 RETURNING id";
     const char* params[1] = {idStr.c_str()};
-    PGresult* res = PQexecParams(conn_, sql, 1,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql, 1, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
 
     if (PQntuples(res) == 0) {
@@ -132,7 +127,7 @@ void Database::deleteOrder(int id) {
 }
 
 void Database::updateOrderStatus(int id, OrderStatus status) {
-    std::string idStr     = std::to_string(id);
+    std::string idStr = std::to_string(id);
     std::string statusStr = statusToStr(status);
 
     const char* sql =
@@ -140,8 +135,7 @@ void Database::updateOrderStatus(int id, OrderStatus status) {
         "WHERE id = $1 RETURNING id";
 
     const char* params[2] = {idStr.c_str(), statusStr.c_str()};
-    PGresult* res = PQexecParams(conn_, sql, 2,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql, 2, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
     if (PQntuples(res) == 0) {
         PQclear(res);
@@ -151,12 +145,10 @@ void Database::updateOrderStatus(int id, OrderStatus status) {
 }
 
 std::vector<Order> Database::getOrdersByStatus(OrderStatus status) {
-    std::string s   = statusToStr(status);
-    std::string sql = std::string(SELECT_FIELDS) +
-        "FROM orders WHERE status = $1 ORDER BY id";
+    std::string s = statusToStr(status);
+    std::string sql = std::string(SELECT_FIELDS) + "FROM orders WHERE status = $1 ORDER BY id";
     const char* params[1] = {s.c_str()};
-    PGresult* res = PQexecParams(conn_, sql.c_str(), 1,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql.c_str(), 1, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
 
     std::vector<Order> orders;
@@ -170,14 +162,13 @@ std::vector<Order> Database::getOrdersByStatus(OrderStatus status) {
 std::vector<Order> Database::searchOrders(const std::string& keyword) {
     std::string pattern = "%" + keyword + "%";
     std::string sql = std::string(SELECT_FIELDS) +
-        "FROM orders "
-        "WHERE LOWER(title) LIKE LOWER($1) "
-        "   OR LOWER(description) LIKE LOWER($1) "
-        "ORDER BY id";
+                      "FROM orders "
+                      "WHERE LOWER(title) LIKE LOWER($1) "
+                      "   OR LOWER(description) LIKE LOWER($1) "
+                      "ORDER BY id";
 
     const char* params[1] = {pattern.c_str()};
-    PGresult* res = PQexecParams(conn_, sql.c_str(), 1,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql.c_str(), 1, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
     std::vector<Order> orders;
     for (int i = 0; i < PQntuples(res); ++i) {
@@ -188,13 +179,12 @@ std::vector<Order> Database::searchOrders(const std::string& keyword) {
 }
 std::vector<Order> Database::getOrdersByDate(const std::string& date) {
     std::string sql = std::string(SELECT_FIELDS) +
-        "FROM orders "
-        "WHERE DATE(created_at) = TO_DATE($1, 'DD-MM-YYYY') "
-        "ORDER BY id";
+                      "FROM orders "
+                      "WHERE DATE(created_at) = TO_DATE($1, 'DD-MM-YYYY') "
+                      "ORDER BY id";
 
     const char* params[1] = {date.c_str()};
-    PGresult* res = PQexecParams(conn_, sql.c_str(), 1,
-                                 nullptr, params, nullptr, nullptr, 0);
+    PGresult* res = PQexecParams(conn_, sql.c_str(), 1, nullptr, params, nullptr, nullptr, 0);
     checkResult(res, PGRES_TUPLES_OK);
 
     std::vector<Order> orders;

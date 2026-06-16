@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e8ecf1;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #f0f2f5;
+        }
+        .method {
+            font-weight: 700;
+            font-size: 13px;
+            padding: 4px 12px;
+            border-radius: 4px;
+            color: white;
+            letter-spacing: 0.5px;
+        }
+        .method.get { background: #61affe; }
+        .method.post { background: #49cc90; }
+        .method.delete { background: #f93e3e; }
+        .method.patch { background: #fca130; }
+        .path {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1a1a2e;
+        }
+        .desc {
+            font-size: 13px;
+            color: #666;
+            margin-left: auto;
+        }
+        .params {
+            margin-bottom: 14px;
+        }
+        .param {
+            margin-bottom: 10px;
+        }
+        .param label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .param label span {
+            color: #999;
+            font-weight: 400;
+            font-size: 12px;
+        }
+        .param input, .param textarea, .param select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            background: #fafbfc;
+            transition: border 0.2s;
+        }
+        .param input:focus, .param textarea:focus, .param select:focus {
+            outline: none;
+            border-color: #4a6cf7;
+            background: white;
+        }
+        .param textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 8px;
+        }
+        .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn:active { transform: translateY(0); }
+        .btn-send { background: #4a6cf7; }
+        .btn-send:hover { background: #3a5cd9; }
+        .btn-clear { background: #e8ecf1; color: #333; }
+        .btn-clear:hover { background: #d5d9e0; }
+        .response {
+            margin-top: 14px;
+            border-top: 1px solid #e8ecf1;
+            padding-top: 14px;
+        }
+        .response-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .response-status {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .response-status.ok { color: #49cc90; }
+        .response-status.error { color: #f93e3e; }
+        .response-status.pending { color: #fca130; }
+        .response-body {
+            background: #1a1a2e;
+            color: #e8e8e8;
+            padding: 14px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .response-body .empty {
+            color: #666;
+            font-style: italic;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #e8ecf1;
+            color: #666;
+        }
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4a6cf7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .url-base {
+            background: #e8ecf1;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #555;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Order API</h1>
+        <div class="subtitle">REST API для управления заказами</div>
+        <div class="url-base" id="baseUrl">http://localhost:8080</div>
+
+        <div class="grid" id="app">
+            <div class="card">
+                <div class="card-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/orders</span>
+                    <span class="desc">Список заказов</span>
+                </div>
+                <div class="params">
+                    <div class="param">
+                        <label>status <span>(опционально)</span></label>
+                        <select id="get-status">
+                            <option value="">Без фильтра</option>
+                            <option value="pending">pending</option>
+                            <option value="processing">processing</option>
+                            <option value="done">done</option>
+                            <option value="cancelled">cancelled</option>
+                        </select>
+                    </div>
+                    <div class="param">
+                        <label>keyword <span>(опционально)</span></label>
+                        <input id="get-keyword" placeholder="Поиск по тексту">
+                    </div>
+                    <div class="param">
+                        <label>date <span>(опционально, формат DD-MM-YYYY)</span></label>
+                        <input id="get-date" placeholder="19-05-2026">
+                    </div>
+                </div>
+                <button class="btn btn-send" onclick="sendRequest('GET', '/orders', 'get')">Отправить</button>
+                <button class="btn btn-clear" onclick="clearResponse('get')">Очистить</button>
+                <div class="response" id="get-response">
+                    <div class="response-header">
+                        <span class="response-status pending">Ожидание запроса</span>
+                    </div>
+                    <div class="response-body"><span class="empty">Ответ будет здесь</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="method post">POST</span>
+                    <span class="path">/orders</span>
+                    <span class="desc">Создать заказ</span>
+                </div>
+                <div class="params">
+                    <div class="param">
+                        <label>title <span style="color:#f93e3e;">*</span></label>
+                        <input id="post-title" placeholder="Название заказа">
+                    </div>
+                    <div class="param">
+                        <label>description <span>(опционально)</span></label>
+                        <textarea id="post-description" placeholder="Описание заказа"></textarea>
+                    </div>
+                </div>
+                <button class="btn btn-send" onclick="sendRequest('POST', '/orders', 'post')">Отправить</button>
+                <button class="btn btn-clear" onclick="clearResponse('post')">Очистить</button>
+                <div class="response" id="post-response">
+                    <div class="response-header">
+                        <span class="response-status pending">Ожидание запроса</span>
+                    </div>
+                    <div class="response-body"><span class="empty">Ответ будет здесь</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="method get">GET</span>
+                    <span class="path">/orders/{id}</span>
+                    <span class="desc">Получить заказ</span>
+                </div>
+                <div class="params">
+                    <div class="param">
+                        <label>id <span style="color:#f93e3e;">*</span></label>
+                        <input id="getid-id" type="number" placeholder="ID заказа">
+                    </div>
+                </div>
+                <button class="btn btn-send" onclick="sendRequest('GET', '/orders/{id}', 'getid')">Отправить</button>
+                <button class="btn btn-clear" onclick="clearResponse('getid')">Очистить</button>
+                <div class="response" id="getid-response">
+                    <div class="response-header">
+                        <span class="response-status pending">Ожидание запроса</span>
+                    </div>
+                    <div class="response-body"><span class="empty">Ответ будет здесь</span></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/orders/{id}</span>
+                    <span class="desc">Удалить заказ</span>
+                </div>
+                <div class="params">
+                    <div class="param">
+                        <label>id <span style="color:#f93e3e;">*</span></label>
+                        <input id="delete-id" type="number" placeholder="ID заказа">
+                    </div>
+                </div>
+                <button class="btn btn-send" onclick="sendRequest('DELETE', '/orders/{id}', 'delete')">Отправить</button>
+                <button class="btn btn-clear" onclick="clearResponse('delete')">Очистить</button>
+                <div class="response" id="delete-response">
+                    <div class="response-header">
+                        <span class="response-status pending">Ожидание запроса</span>
+                    </div>
+                    <div class="response-body"><span class="empty">Ответ будет здесь</span></div>
+                </div>
+            </div>
+
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="method patch">PATCH</span>
+                    <span class="path">/orders/{id}/status</span>
+                    <span class="desc">Изменить статус</span>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:14px;">
+                    <div class="params">
+                        <div class="param">
+                            <label>id <span style="color:#f93e3e;">*</span></label>
+                            <input id="patch-id" type="number" placeholder="ID заказа">
+                        </div>
+                    </div>
+                    <div class="params">
+                        <div class="param">
+                            <label>status <span style="color:#f93e3e;">*</span></label>
+                            <select id="patch-status">
+                                <option value="pending">pending</option>
+                                <option value="processing">processing</option>
+                                <option value="done">done</option>
+                                <option value="cancelled">cancelled</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn btn-send" onclick="sendRequest('PATCH', '/orders/{id}/status', 'patch')">Отправить</button>
+                <button class="btn btn-clear" onclick="clearResponse('patch')">Очистить</button>
+                <div class="response" id="patch-response">
+                    <div class="response-header">
+                        <span class="response-status pending">Ожидание запроса</span>
+                    </div>
+                    <div class="response-body"><span class="empty">Ответ будет здесь</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8080';
+
+        function getParams(type) {
+            const map = {
+                'get': {
+                    status: document.getElementById('get-status').value,
+                    keyword: document.getElementById('get-keyword').value,
+                    date: document.getElementById('get-date').value
+                },
+                'post': {
+                    title: document.getElementById('post-title').value,
+                    description: document.getElementById('post-description').value
+                },
+                'getid': {
+                    id: document.getElementById('getid-id').value
+                },
+                'delete': {
+                    id: document.getElementById('delete-id').value
+                },
+                'patch': {
+                    id: document.getElementById('patch-id').value,
+                    status: document.getElementById('patch-status').value
+                }
+            };
+            return map[type] || {};
+        }
+
+        function buildUrl(method, path, params) {
+            let url = BASE_URL + path;
+            if (method === 'GET' && path === '/orders') {
+                const qs = [];
+                if (params.status) qs.push('status=' + encodeURIComponent(params.status));
+                if (params.keyword) qs.push('keyword=' + encodeURIComponent(params.keyword));
+                if (params.date) qs.push('date=' + encodeURIComponent(params.date));
+                if (qs.length) url += '?' + qs.join('&');
+                return url;
+            }
+            if (path.includes('{id}')) {
+                const id = params.id;
+                if (!id) return null;
+                url = url.replace('{id}', id);
+                return url;
+            }
+            return url;
+        }
+
+        function getBody(method, params) {
+            if (method === 'POST') {
+                const body = {};
+                if (params.title) body.title = params.title;
+                if (params.description) body.description = params.description;
+                return JSON.stringify(body);
+            }
+            if (method === 'PATCH') {
+                return JSON.stringify({ status: params.status });
+            }
+            return null;
+        }
+
+        function clearResponse(type) {
+            const container = document.getElementById(type + '-response');
+            const statusEl = container.querySelector('.response-status');
+            const bodyEl = container.querySelector('.response-body');
+            statusEl.textContent = 'Ожидание запроса';
+            statusEl.className = 'response-status pending';
+            bodyEl.innerHTML = '<span class="empty">Ответ будет здесь</span>';
+        }
+
+        async function sendRequest(method, path, type) {
+            const params = getParams(type);
+            const container = document.getElementById(type + '-response');
+            const statusEl = container.querySelector('.response-status');
+            const bodyEl = container.querySelector('.response-body');
+
+            statusEl.textContent = '⏳ Отправка...';
+            statusEl.className = 'response-status pending';
+            bodyEl.innerHTML = '<div class="loading"></div> Загрузка...';
+
+            const url = buildUrl(method, path, params);
+            if (!url) {
+                statusEl.textContent = '❌ Ошибка: ID обязателен';
+                statusEl.className = 'response-status error';
+                bodyEl.innerHTML = '<span style="color:#f93e3e;">Укажите ID заказа</span>';
+                return;
+            }
+
+            const body = getBody(method, params);
+            const options = { method };
+            if (body) {
+                options.headers = { 'Content-Type': 'application/json' };
+                options.body = body;
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const responseBody = await response.text();
+
+                let formattedBody = responseBody;
+                try {
+                    const json = JSON.parse(responseBody);
+                    formattedBody = JSON.stringify(json, null, 2);
+                } catch (e) {
+                    // оставляем как есть
+                }
+
+                const statusText = response.status + ' ' + response.statusText;
+                statusEl.textContent = '✅ ' + statusText;
+                statusEl.className = 'response-status ok';
+                bodyEl.textContent = formattedBody || '(пустой ответ)';
+
+            } catch (error) {
+                statusEl.textContent = '❌ Ошибка: ' + error.message;
+                statusEl.className = 'response-status error';
+                bodyEl.innerHTML = '<span style="color:#f93e3e;">' + error.message + '</span>';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const baseUrlEl = document.getElementById('baseUrl');
+            const host = window.location.hostname;
+            const port = window.location.port || '8080';
+            const detectedUrl = 'http://' + host + ':' + port;
+            baseUrlEl.textContent = detectedUrl;
+        });
+    </script>
+</body>
+</html>

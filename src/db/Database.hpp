@@ -1,8 +1,10 @@
 #pragma once
 
+#include <libpq-fe.h>
+
 #include <string>
 #include <vector>
-#include <libpq-fe.h>
+
 #include "model/Order.hpp"
 
 /**
@@ -12,7 +14,7 @@
  * Соединение открывается один раз в конструкторе
  */
 class Database {
-public:
+   public:
     /**
      * @brief Конструктор - открывает соединение с БД
      * @param connStr Строка подключения PostgreSQL
@@ -92,21 +94,21 @@ public:
      * @throws std::runtime_error если заказ не найден
      */
     virtual void deleteOrder(int id);
-    
+
     /**
      * @brief Очищает БД для тестов
      */
     virtual void clearForTesting();
-    
-protected:
+
+   protected:
     /**
      * @brief Защищенный конструктор для мок-объектов (не открывает соединение с БД)
-     * 
+     *
      * Используется только для тестирования. Не вызывает PQconnectdb.
      */
     Database() : conn_(nullptr) {}
-    
-    PGconn* conn_; ///< Соединение с PostgreSQL
+
+    PGconn* conn_;  ///< Соединение с PostgreSQL
 
     /**
      * @brief Вспомогательный метод для парса строки результата в объект Order
