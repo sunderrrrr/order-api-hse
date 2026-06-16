@@ -20,11 +20,11 @@ REST API для управления заказами. CRUD операции. Б
 Клонировать репозиторий:
 
 ```
-git clone <ссылка>
+git clone https://github.com/sunderrrrr/order-api-hse.git
 cd order-api-hse
 ```
 
-Собрать через Docker (рекомендуется):
+Собрать через Docker:
 
 ```
 docker-compose up --build
