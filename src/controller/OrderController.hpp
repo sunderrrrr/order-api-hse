@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "db/Database.hpp"
+#include "db/IDatabase.hpp"
 #include "dto/OrderDto.hpp"
 #include "oatpp/core/macro/codegen.hpp"
 #include "oatpp/core/macro/component.hpp"
@@ -21,7 +21,7 @@ class OrderController : public oatpp::web::server::api::ApiController {
      * @param db объект базы данных
      * @param objectMapper JSON-маппер
      */
-    OrderController(std::shared_ptr<Database> db,
+    OrderController(std::shared_ptr<IDatabase> db,
                     std::shared_ptr<oatpp::data::mapping::ObjectMapper> objectMapper)
         : oatpp::web::server::api::ApiController(objectMapper), db_(db) {}
 
@@ -31,7 +31,7 @@ class OrderController : public oatpp::web::server::api::ApiController {
      * @return shared_ptr на контроллер
      */
     static std::shared_ptr<OrderController> createShared(
-        std::shared_ptr<Database> db,
+        std::shared_ptr<IDatabase> db,
         OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper)) {
         return std::make_shared<OrderController>(db, objectMapper);
     }
@@ -110,12 +110,6 @@ class OrderController : public oatpp::web::server::api::ApiController {
 
     /**
      * @brief Получить заказы с опциональной фильтрацией
-     *
-     * Query params (взаимоисключающие, приоритет сверху вниз):
-     *   - status  — фильтр по статусу
-     *   - keyword — поиск по тексту
-     *   - date    — фильтр по дате (DD-MM-YYYY)
-     *   Без параметров — возвращает все заказы
      */
     ENDPOINT("GET", "/orders", getOrders, QUERY(String, status, "status", ""),
              QUERY(String, keyword, "keyword", ""), QUERY(String, date, "date", "")) {
@@ -158,8 +152,6 @@ class OrderController : public oatpp::web::server::api::ApiController {
 
     /**
      * @brief Получить заказ по ID
-     *
-     * Возвращает 404 если заказ не существует.
      */
     ENDPOINT("GET", "/orders/{id}", getOrderById, PATH(Int32, id)) {
         try {
@@ -185,8 +177,6 @@ class OrderController : public oatpp::web::server::api::ApiController {
 
     /**
      * @brief Удалить заказ по ID
-     *
-     * Возвращает 200 при успехе, 404 если заказ не найден.
      */
     ENDPOINT("DELETE", "/orders/{id}", deleteOrder, PATH(Int32, id)) {
         try {
@@ -255,12 +245,12 @@ class OrderController : public oatpp::web::server::api::ApiController {
     }
 
    private:
-    std::shared_ptr<Database> db_;  ///< Объект для работы с БД
+    std::shared_ptr<IDatabase> db_;  ///< Интерфейс для работы с БД
 
     /**
      * @brief Конвертирует Order в OrderDto
      * @param o внутренняя модель заказа
-     * @return oatpp Object<OrderDto> (не shared_ptr!)
+     * @return oatpp Object<OrderDto>
      */
     static Object<OrderDto> orderToDto(const Order& o) {
         auto dto = OrderDto::createShared();

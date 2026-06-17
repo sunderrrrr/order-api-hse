@@ -5,6 +5,7 @@
 #include <string>
 
 #include "db/Database.hpp"
+#include "db/IDatabase.hpp"
 #include "oatpp/core/macro/component.hpp"
 #include "oatpp/network/tcp/server/ConnectionProvider.hpp"
 #include "oatpp/parser/json/mapping/ObjectMapper.hpp"
@@ -45,7 +46,7 @@ class AppComponent {
     }());
 
     /// @brief Соединение с PostgreSQL (параметры из env)
-    OATPP_CREATE_COMPONENT(std::shared_ptr<Database>, database)([] {
+    OATPP_CREATE_COMPONENT(std::shared_ptr<IDatabase>, database)([] {
         auto h = std::string(std::getenv("DB_HOST") ? std::getenv("DB_HOST") : "localhost");
         auto p = std::string(std::getenv("DB_PORT") ? std::getenv("DB_PORT") : "5432");
         auto n = std::string(std::getenv("DB_NAME") ? std::getenv("DB_NAME") : "orders");

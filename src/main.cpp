@@ -12,7 +12,7 @@ int main() {
         AppComponent components;
 
         OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router);
-        OATPP_COMPONENT(std::shared_ptr<Database>, database);
+        OATPP_COMPONENT(std::shared_ptr<IDatabase>, database);
         OATPP_COMPONENT(std::shared_ptr<oatpp::network::ServerConnectionProvider>, provider);
         OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpConnectionHandler>, handler);
 

@@ -29,7 +29,10 @@ target_link_libraries(order_api
 
 enable_testing()
 add_executable(tests test/test_orders.cpp)
-target_compile_definitions(tests PRIVATE DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+target_include_directories(tests PRIVATE
+    ${CMAKE_SOURCE_DIR}/test
+    ${CMAKE_SOURCE_DIR}/src
+)
 target_link_libraries(tests
     order_lib
     doctest::doctest

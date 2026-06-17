@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "db/IDatabase.hpp"
 #include "model/Order.hpp"
 
 /**
@@ -13,12 +14,11 @@
  * Инкапсулирует все SQL-запросы
  * Соединение открывается один раз в конструкторе
  */
-class Database {
+class Database : public IDatabase {
    public:
     /**
      * @brief Конструктор - открывает соединение с БД
      * @param connStr Строка подключения PostgreSQL
-     *        (пример "host=localhost dbname=orders user=postgres password=pass")
      * @throws std::runtime_error Если подключение не удалось
      */
     explicit Database(const std::string& connStr);
@@ -32,23 +32,23 @@ class Database {
      * @brief Создаёт таблицу orders по миграциям если её нет
      * @throws std::runtime_error при ошибке SQL
      */
-    virtual void initSchema();
+    void initSchema() override;
 
     /**
      * @brief Добавление нового заказа
      * @param title название
      * @param description описание
-     * @return Созданный объект класса Order с заполненным id и created_at
+     * @return Созданный объект класса Order
      * @throws std::invalid_argument Если title пустой
      * @throws std::runtime_error при ошибке вставки
      */
-    virtual Order createOrder(const std::string& title, const std::string& description);
+    Order createOrder(const std::string& title, const std::string& description) override;
 
     /**
      * @brief Возвращает все заказы
      * @return Вектор всех заказов в БД
      */
-    virtual std::vector<Order> getAllOrders();
+    std::vector<Order> getAllOrders() override;
 
     /**
      * @brief Возвращает заказ по ID
@@ -56,21 +56,21 @@ class Database {
      * @return Найденный по ID объект класса Order
      * @throws std::runtime_error Если заказ не найден
      */
-    virtual Order getOrderById(int id);
+    Order getOrderById(int id) override;
 
     /**
      * @brief Возвращает заказы с заданным статусом
      * @param status статус для фильтрации
      * @return std::vector<Order> Вектор заказов
      */
-    virtual std::vector<Order> getOrdersByStatus(OrderStatus status);
+    std::vector<Order> getOrdersByStatus(OrderStatus status) override;
 
     /**
      * @brief Ищет заказы по ключевому слову в title или description
      * @param keyword слово для поиска (без учёта регистра)
      * @return std::vector<Order> Вектор подходящих заказов
      */
-    virtual std::vector<Order> searchOrders(const std::string& keyword);
+    std::vector<Order> searchOrders(const std::string& keyword) override;
 
     /**
      * @brief Возвращает заказы, созданные в указанную дату
@@ -78,7 +78,7 @@ class Database {
      * @return std::vector<Order> Вектор заказов
      * @throws std::runtime_error При неверном формате даты
      */
-    virtual std::vector<Order> getOrdersByDate(const std::string& date);
+    std::vector<Order> getOrdersByDate(const std::string& date) override;
 
     /**
      * @brief Обновляет статус заказа
@@ -86,25 +86,23 @@ class Database {
      * @param status Новый статус
      * @throws std::runtime_error если заказ не найден
      */
-    virtual void updateOrderStatus(int id, OrderStatus status);
+    void updateOrderStatus(int id, OrderStatus status) override;
 
     /**
      * @brief Удаляет заказ по ID
      * @param id Идентификатор заказа
      * @throws std::runtime_error если заказ не найден
      */
-    virtual void deleteOrder(int id);
+    void deleteOrder(int id) override;
 
     /**
      * @brief Очищает БД для тестов
      */
-    virtual void clearForTesting();
+    void clearForTesting() override;
 
    protected:
     /**
      * @brief Защищенный конструктор для мок-объектов (не открывает соединение с БД)
-     *
-     * Используется только для тестирования. Не вызывает PQconnectdb.
      */
     Database() : conn_(nullptr) {}
 
@@ -112,16 +110,11 @@ class Database {
 
     /**
      * @brief Вспомогательный метод для парса строки результата в объект Order
-     * @param res Результат запроса libpq
-     * @param row Номер строки
-     * @return Order
      */
     Order rowToOrder(PGresult* res, int row);
 
     /**
-     * @brief Проверяет статус результата, бросает исключение при ошибке
-     * @param res Результат запроса
-     * @param expectedStatus Ожидаемый статус (PGRES_TUPLES_OK и т.п.)
+     * @brief Проверяет статус результата
      * @throws std::runtime_error Если статус не совпадает
      */
     void checkResult(PGresult* res, ExecStatusType expectedStatus);
